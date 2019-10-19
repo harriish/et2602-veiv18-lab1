@@ -17,3 +17,32 @@ my_nickname =  'NICK' + nickname
 my_server.send(my_nickname)#to solve req2
 empty = ''
 
+
+while 1 :
+	list_of_my_sockets = [sys.stdin, my_server]#list of input streams
+	list1,list2,list3 = select.select(list_of_my_sockets,[],[])#if server wants to send a message then if condition will send true and if user wants to send a message then else condition will be true
+	for i in list1:
+		if i == my_server:
+			received_message = my_server.recv(1024)
+			if not received_message:
+				print("Disconnected")
+				sys.exit()
+			else:
+					if received_message != 'MSG '+my_nickname+' '+empty :
+						sys.stdout.write(received_message.strip('MSG '))
+						sys.stdout.flush()
+					else :
+						continue
+
+
+		else:
+				empty = ''
+				message = sys.stdin.readline()
+				empty += message
+				my_message = 'MSG ' + message
+				my_server(message.encode('utf-8'))
+				sys.stdout.write("you : ")
+				sys.stdout.write(message)
+				sys.stdout.flush()
+
+my_server.close()
