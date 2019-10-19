@@ -40,7 +40,7 @@ while 1 :
 				message = sys.stdin.readline()
 				empty += message
 				my_message = 'MSG ' + message
-				my_server(message.encode('utf-8'))
+				my_server.sendall(message.encode('utf-8'))
 				sys.stdout.write("you : ")
 				sys.stdout.write(message)
 				sys.stdout.flush()
