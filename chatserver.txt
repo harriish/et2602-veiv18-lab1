@@ -54,3 +54,20 @@ def handle_client(client, client_address) :
 				send_a_message = "MSG "+message +" "+ display
 				#print(send_a_message)
 			broadcast(send_a_message,client)
+
+
+def broadcast(display, connect_the_client):
+	for i in my_client_sockets:
+		if i != my_server and i != connect_the_client :
+			try:
+				i.send(display.encode('utf-8'))
+			except:
+				pass
+
+while True:
+	my_server.listen(100)
+	print("Waiting for connections")
+	accepting_thread = Thread (target = clients_request)
+	accepting_thread.start()
+	accepting_thread.join()
+	my_server.close()
