@@ -25,3 +25,32 @@ def clients_request() :
 
 
 def handle_client(client, client_address) :
+
+	capacity = client.recv(1024)
+	message = capacity.strip("NICK ")
+	if len(message)<=12 and re.match("^[A-Za-z0-9\_]+$",message) is not None:
+		client.send("OK \n")
+	else :
+		client.send("Error - nickname is not valid \n")
+		message = 'Unknown'
+	display = "%s has connected and joined the chat \n"% message
+	broadcast(display, client)
+	my_clients[client] = message
+	while True :
+		flag = client.recv(1024).decode('utf-8')
+		display = flag.strip("MSG ")
+		if not display:
+			client.close()
+			del my_clients[client]
+			fault = "%s has left the chat \n"% message
+			print("%s:%s has disconnected" %client_address)
+			broadcast(fault,client)
+			break
+		else :
+			if len(display) > 255 and re.match("^[^\x00 - \x7F]*$", display) is None:
+				client.send("Error - message is not valid")
+				send_a_message = "MSG "+message +" "
+			else:
+				send_a_message = "MSG "+message +" "+ display
+				#print(send_a_message)
+			broadcast(send_a_message,client)
