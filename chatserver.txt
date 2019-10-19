@@ -1,0 +1,27 @@
+#!/usr/bin/python
+import socket, sys
+import re, select
+from threading import Thread
+
+my_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+if(len(sys.argv) < 2):
+	print("input be : python chatserver.py hostname:port")
+	sys.exit()
+my_list = sys.argv[1].split(':')
+my_host = str(my_list[0])
+my_port = int(my_list[1])
+my_clients = {}#a list of clients
+my_client_sockets = []
+my_server.bind(( my_host, my_port ))
+
+def clients_request() :
+	while True:
+		client, client_address = my_server.accept()
+		print("%s:%s has been connected" % client_address)
+		client.send("Hello 1 \n")
+		my_client_sockets.append(client)
+		Thread(target = handle_client, args = (client, client_address)).start()
+
+
+
+def handle_client(client, client_address) :
