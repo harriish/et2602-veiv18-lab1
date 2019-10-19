@@ -2,6 +2,8 @@
 import socket, sys
 import select, re, string
 from threading import Thread
+
+
 my_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#AF_INET is address domain of socket and SOCK_STREAM is data which are read
 if(len(sys.argv) < 3):
 	print("input be python chatclient.py hostname:port nickname")#nickname is limited to 12 characters
