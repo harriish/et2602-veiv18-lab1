@@ -5,7 +5,7 @@ from threading import Thread
 
 my_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#AF_INET is address domain of socket and SOCK_STREAM is data which are read
 if(len(sys.argv) < 2):#checks whether sufficient arguments are provided or not
-	print("input be : python chatserver.py hostname:port")
+	print("input be : python chatserver hostname:port")
 	sys.exit()
 my_list = sys.argv[1].split(':')
 my_host = str(my_list[0])
