@@ -1,73 +1,121 @@
 #!/usr/bin/python
 import socket, sys
 import re, select
-from threading import Thread
+from thread import *
 
-my_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#AF_INET is address domain of socket and SOCK_STREAM is data which are read
-if(len(sys.argv) < 2):#checks whether sufficient arguments are provided or not
+
+if len(sys.argv) !=2:#checks whether sufficient arguments are provided or not
 	print("input be : python chatserver hostname:port")
 	sys.exit()
-my_list = sys.argv[1].split(':')
-my_host = str(my_list[0])
-my_port = int(my_list[1])
-my_clients = {}#a list of clients
-my_client_sockets = []
+my_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#AF_INET is address domain of socket and SOCK_STREAM is data which are read
+my_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+my_list = sys.argv[1]
+all = my_list.split(':')
+my_host = str(all[0])
+my_port = int(all[1])
+#my_clients = {}a list of clients
+
 my_server.bind(( my_host, my_port ))#binds server to specific IP address and to respective port number
 
-def clients_request() :
+my_server.listen(100)
+print('Waiting for connections')
+
+my_client_sockets = []
+my_client_sockets.append(my_server)
+
+'''def clients_request():
 	while True:
 		client, client_address = my_server.accept()
 		print("%s:%s has been connected" % client_address)
-		client.send("Hello 1 \n")
+		client.send("Hello 1 ")
 		my_client_sockets.append(client)
-		Thread(target = handle_client, args = (client, client_address)).start()
+		Thread(target = handle_client, args = (client, client_address)).start()'''
 
 
 
-def handle_client(client, client_address) :
+def handle_client(client,client_address):
+	while True:
 
-	capacity = client.recv(1024)
-	message = capacity.strip("NICK ")
-	if len(message)<=12 and re.match("^[A-Za-z0-9\_]+$",message) is not None:
-		client.send("OK \n")
-	else :
-		client.send("Error - nickname is not valid \n")
-		message = 'Unknown'
-	display = "%s has connected and joined the chat \n"% message
-	broadcast(display, client)
-	my_clients[client] = message
-	while True :
-		flag = client.recv(1024).decode('utf-8')
-		display = flag.strip("MSG ")
-		if not display:
-			client.close()
-			del my_clients[client]
-			fault = "%s has left the chat \n"% message
-			print("%s:%s has disconnected" %client_address)
-			broadcast(fault,client)
-			break
-		else :
-			if len(display) > 255 and re.match("^[^\x00 - \x7F]*$", display) is None:
-				client.send("Error - message is not valid")
-				send_a_message = "MSG "+message +" "
+		try:
+			capacity = client.recv(2048).decode('utf-8')
+			message = capacity.strip("NICK ")
+			regex = re.compile('[@!#$%^&*()?/|}{~:]')
+
+			if(regex.search(message) == None) and len(message)<=12 and 'NICK ' in capacity:
+				client.sendall('OK'.encode('utf-8'))
+				break
+			elif len(message) or regex.search(message) != None: 
+				client.sendall("Error - nickname is not valid".encode('utf-8'))
 			else:
-				send_a_message = "MSG "+message +" "+ display
-				#print(send_a_message)
-			broadcast(send_a_message,client)
+				client.close()
+				print(client_address[0]+" has disconnected")
+				my_client_sockets.remove(client)
+				del my_client_sockets[client]
+				break
+		except :
+				break
 
 
-def broadcast(display, connect_the_client):
-	for i in my_client_sockets:
-		if i != my_server and i != connect_the_client :
+	while True:
+		try:
+			if client in my_client_sockets:
+				flag = client.recv(2048).decode('utf-8')
+				display = flag.strip('MSG ')
+
+				if not flag:
+					client.close()
+					print(client_address[0]+ " has disconnected")
+					my_client_sockets.remove(client)
+					break
+
+				elif 'MSG ' not in flag:
+					client.sendall('ERR malformed message'.encode('utf-8'))
+				else:
+
+					if len(display)<=255 :
+
+
+						count = 0
+						for i in display[:-1]:
+							if ord(i)<31:
+								count = count +1
+							else:
+								pass
+						if count !=0:
+							client.sendall('Error , dont use control characters'.encode('utf-8'))
+						else:
+							send_a_message = 'MSG '+message+'' + display[:-1]
+
+							broadcasting(send_a_message, client, display)
+					elif len(display) > 255 :
+						client.sendall('Error message is more than 255 characters'.encode('utf-8'))
+		except KeyboardInterrupt:
+			client.close()
+			break
+
+def broadcasting(flag, connect_the_client, display):
+	for j in my_client_sockets:
+		if j!= my_server:
 			try:
-				i.send(display.encode('utf-8'))
-			except:
-				pass
+				j.sendall(flag.encode('utf-8'))
+			except KeyboardInterrupt:
+				my_client_sockets.remove(j)
+				break
 
 while True:
-	my_server.listen(100)#listens to 100 active connections
-	print("Waiting for connections")
-	accepting_thread = Thread (target = clients_request)#individual thread for every user which will connect
-	accepting_thread.start()
-	accepting_thread.join()
-	my_server.close()
+	client, client_address = my_server.accept()
+	#print("%s:%s has been connected" % client_address)
+	client.sendall("Hello 1 ".encode('utf-8'))
+	my_client_sockets.append(client)
+	print(client_address[0]+" has been connected")
+	#Thread(target = handle_client, args = (client, client_address)).start()
+	'''client,client_address = my_server.accept()
+	client.sendall('Hello 1'.encode('utf-8'))
+	my_client_sockets.append(client)
+	print(client_address[0]+" has connected")'''
+	accepting_thread(handle_client,(client,client_address))
+
+		
+client.close()
+my_server.close()
