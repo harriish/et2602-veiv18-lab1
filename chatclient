@@ -1,53 +1,72 @@
-#!/usr/bin/python
-import socket, sys
-import select, re, string
-from thread import *
+#!/usr/bin/python3
+
+import socket
+import sys
+from _thread import *
+import select 
+import re 
+
+if len(sys.argv)!=3:
+    print("Input format be = ./chatclient ip:port nickname")
+    sys.exit()
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+''' #AF_INET is address domain of socket and SOCK_STREAM is data which are read '''
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 
+Info = (sys.argv[1])
+a=Info.split(':')
+IP_addr=str(a[0])
+port=int(a[1])
+nick=str(sys.argv[2])
 
-if len(sys.argv) != 3:
-	print("input be python chatclient hostname:port nickname")#nickname is limited to 12 characters
-	sys.exit()
-my_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#AF_INET is address domain of socket and SOCK_STREAM is data which are read
-my_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-my_list = sys.argv[1]
-all = my_list.split(':')
+server.connect((IP_addr, port))
+#connects to the server 
+first_msg=server.recv(2048).decode('utf-8')
 
-my_host = str(all[0])
-my_port = int(all[1])
-my_nickname = str(sys.argv[2])
+print(first_msg)
 
-#my_server.settimeout(10)
-my_server.connect((my_host, my_port))
-send_message = my_server.recv(2048).decode('utf-8')
-print(send_message)
+nick = 'NICK ' + nick
+#print('NICK '+nick.encode('utf-8'))
 
-my_nickname =  'NICK ' + my_nickname
-my_server.sendall(my_nickname.encode('utf-8'))#to solve req2
-received_message = my_server.recv(2048).decode('utf-8')
-print(received_message)
-if received_message == "OK":
-	pass
-elif received_message == "Error nickname is not valid":
-	print('error because,Dont exceed the limit i.e. more than 12 characters or any special characters are given')
-sys.exit()
+server.sendall(nick.encode('utf-8'))
+#senall command sends the info in it as bytes to the server , it sends all the bytes at a time
+ok_msg=server.recv(2048).decode('utf-8')
+print(ok_msg)
+if ok_msg == "OK":
+    pass
+elif ok_msg == "ERR malformed nick name":
+    print('do not enter nick name with special characters,limit to 12 chars')
+    print('disconnecting try again with valid nickname')
+    sys.exit()
+    
+    
 
 
 
 while True:
-	list_of_my_sockets = [sys.stdin, my_server]#list of input streams
-	list1,list2,list3 = select.select(list_of_my_sockets,[],[])#if server wants to send a message then if condition will send true and if user wants to send a message then else condition will be true
-	for i in list1:
-		if i == my_server:
-			message = my_server.recv(20248).decode('utf-8')
-			print(message)
-		else:
-			message = sys.stdin.readline()
-			message = 'MSG ' + message	
-			if message == '\n':
-				continue
-			else:
-				server.sendall(message.encode('utf-8'))
+    socket_list=[sys.stdin, server]#list of input streams
+    ''' either user gives an input to send to other clients or server is sending a message which will be displayed on the terminal. '''
 
-my_server.close()
+    read_sockets,write_sockets,error_sockets=select.select(socket_list,[],[])
+    '''#if server wants to send a message then if condition will send true and if user wants to send a message then else condition will be true
+'''
+    for sockets in read_sockets:
+        if sockets == server:
+            message = sockets.recv(2048).decode('utf-8')
+            print(message)
+        else:
+            message=sys.stdin.readline()
+            #sys.stdin is a system output that represents standard input .readline() is used to readlines from the input
+            message = 'MSG '+ message
+            if message == '\n':
+                continue
+            else:
+                server.sendall(message.encode('utf-8'))
+                
+server.close()
+
+
+
