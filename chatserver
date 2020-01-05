@@ -3,7 +3,7 @@ import socket
 import sys
 from _thread import *
 import select 
-import re
+import re 
 
 if len(sys.argv)!=2:
     print("Input format be = ./chatserver ip:port ")
@@ -19,9 +19,9 @@ IP_addr=str(a[0])
 port=int(a[1])
 
 server.bind((IP_addr,port))
-'''binds ip and port of the server and listens it '''
+
 server.listen(100)
-print('Server connected')
+
 print('Waiting for client connections')
 
 
@@ -40,10 +40,10 @@ def clientthread(conn,addr):
                 conn.sendall('OK'.encode('utf-8'))
                 break
             elif len(nick1) or regex.search(nick1) != None:
-                conn.sendall('ERR message is not valid'.encode('utf-8'))
+                conn.sendall('ERR malformed nick name'.encode('utf-8'))
             else:
                 conn.close()
-                print(addr[0]+" has been disconnected")
+                print(addr[0]+" has disconnected")
                 clients.remove(conn)
                 del clients[conn]
                 break
@@ -80,7 +80,7 @@ def clientthread(conn,addr):
                             
                             else:
                                 pass
-                            
+                    #else if and next elif        
                         if count != 0:
                             conn.sendall('ERROR -> dont use control characters'.encode('utf-8'))
                         else:
@@ -104,19 +104,18 @@ def broadcasting(message,connection,nick1):
             except KeyboardInterrupt:
                     clients.remove(sockets)
                     break 
-'''  broadcast message received from one client
- to every active clients connected to the server '''
+
 
 
 while True:
     conn,addr=server.accept()
-    #accepts  connections 
+    
     conn.sendall('Hello 1'.encode('utf-8'))
     clients.append(conn)
     print(addr[0]+" has connected")
     
     start_new_thread(clientthread,(conn,addr))
-    #starts a new process for every new client
+    
 
 conn.close()
 server.close()     
