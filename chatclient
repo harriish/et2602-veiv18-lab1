@@ -11,7 +11,7 @@ if len(sys.argv)!=3:
     sys.exit()
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-''' #AF_INET is address domain of socket and SOCK_STREAM is data which are read '''
+
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 
@@ -23,23 +23,23 @@ nick=str(sys.argv[2])
 
 
 server.connect((IP_addr, port))
-#connects to the server 
+
 first_msg=server.recv(2048).decode('utf-8')
 
 print(first_msg)
 
 nick = 'NICK ' + nick
-#print('NICK '+nick.encode('utf-8'))
+
 
 server.sendall(nick.encode('utf-8'))
-#senall command sends the info in it as bytes to the server , it sends all the bytes at a time
+
 ok_msg=server.recv(2048).decode('utf-8')
 print(ok_msg)
 if ok_msg == "OK":
     pass
 elif ok_msg == "ERR malformed nick name":
-    print('do not enter nick name with special characters,limit to 12 chars')
-    print('disconnecting try again with valid nickname')
+    print('dont enter nick name with special characters,limit upto 12 characters')
+    print('disconnecting, try with valid nickname')
     sys.exit()
     
     
@@ -47,19 +47,18 @@ elif ok_msg == "ERR malformed nick name":
 
 
 while True:
-    socket_list=[sys.stdin, server]#list of input streams
-    ''' either user gives an input to send to other clients or server is sending a message which will be displayed on the terminal. '''
+    socket_list=[sys.stdin, server]
+    
 
     read_sockets,write_sockets,error_sockets=select.select(socket_list,[],[])
-    '''#if server wants to send a message then if condition will send true and if user wants to send a message then else condition will be true
-'''
+    
     for sockets in read_sockets:
         if sockets == server:
             message = sockets.recv(2048).decode('utf-8')
             print(message)
         else:
             message=sys.stdin.readline()
-            #sys.stdin is a system output that represents standard input .readline() is used to readlines from the input
+            
             message = 'MSG '+ message
             if message == '\n':
                 continue
